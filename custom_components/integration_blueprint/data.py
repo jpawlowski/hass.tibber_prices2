@@ -1,4 +1,4 @@
-"""Custom types for integration_blueprint."""
+"""Custom types for tibber_prices."""
 
 from __future__ import annotations
 
@@ -9,17 +9,17 @@ if TYPE_CHECKING:
     from homeassistant.config_entries import ConfigEntry
     from homeassistant.loader import Integration
 
-    from .api import IntegrationBlueprintApiClient
-    from .coordinator import BlueprintDataUpdateCoordinator
+    from .api import TibberPricesApiClient
+    from .coordinator import TibberPricesDataUpdateCoordinator
 
 
-type IntegrationBlueprintConfigEntry = ConfigEntry[IntegrationBlueprintData]
+type TibberPricesConfigEntry = ConfigEntry[TibberPricesData]
 
 
 @dataclass
-class IntegrationBlueprintData:
-    """Data for the Blueprint integration."""
+class TibberPricesData:
+    """Data for the TibberPrices integration."""
 
-    client: IntegrationBlueprintApiClient
-    coordinator: BlueprintDataUpdateCoordinator
+    client: TibberPricesApiClient
+    coordinator: TibberPricesDataUpdateCoordinator
     integration: Integration

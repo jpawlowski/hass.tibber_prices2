@@ -1,6 +1,7 @@
 # The contents of this file is based on https://github.com/home-assistant/core/blob/dev/pyproject.toml
 
 target-version = "py313"
+line-length = 120
 
 [lint]
 select = [
@@ -8,6 +9,7 @@ select = [
 ]
 
 ignore = [
+    "ANN101", # Missing type annotation for `self` in method
     "ANN401", # Dynamically typed expressions (typing.Any) are disallowed
     "D203", # no-blank-line-before-class (incompatible with formatter)
     "D212", # multi-line-summary-first-line (incompatible with formatter)
@@ -17,6 +19,10 @@ ignore = [
 
 [lint.flake8-pytest-style]
 fixture-parentheses = false
+
+[lint.isort]
+force-single-line = false
+known-first-party = ["custom_components", "homeassistant"]
 
 [lint.pyupgrade]
 keep-runtime-typing = true
