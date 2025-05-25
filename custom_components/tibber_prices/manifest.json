@@ -1,12 +1,17 @@
 {
-  "domain": "tibber_prices",
-  "name": "Tibber Prices",
-  "codeowners": [
-    "@jpawlowski"
-  ],
-  "config_flow": true,
-  "documentation": "https://github.com/jpawlowski/tibber_prices2",
-  "iot_class": "cloud_polling",
-  "issue_tracker": "https://github.com/jpawlowski/tibber_prices2/issues",
-  "version": "0.1.0"
+    "domain": "tibber_prices",
+    "name": "Tibber Prices",
+    "codeowners": [
+        "@jpawlowski"
+    ],
+    "config_flow": true,
+    "dependencies": [],
+    "documentation": "https://github.com/jpawlowski/tibber_prices2",
+    "integration_type": "service",
+    "iot_class": "cloud_polling",
+    "issue_tracker": "https://github.com/jpawlowski/tibber_prices2/issues",
+    "requirements": [
+        "aiohttp>=3.8.0"
+    ],
+    "version": "0.1.0"
 }

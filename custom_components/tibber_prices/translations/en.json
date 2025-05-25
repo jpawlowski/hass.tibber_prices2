@@ -2,20 +2,74 @@
     "config": {
         "step": {
             "user": {
-                "description": "If you need help with the configuration have a look here: https://github.com/jpawlowski/tibber_prices2",
+                "title": "Tibber Prices Setup",
+                "description": "Connect to your Tibber account using an API token. Get your API token at: https://developer.tibber.com/settings/accesstoken",
                 "data": {
-                    "username": "Username",
-                    "password": "Password"
+                    "access_token": "API Token"
+                }
+            },
+            "home_select": {
+                "title": "Select Homes",
+                "description": "Select which Tibber homes to add",
+                "data": {
+                    "homes": "Homes"
                 }
             }
         },
         "error": {
-            "auth": "Username/Password is wrong.",
-            "connection": "Unable to connect to the server.",
-            "unknown": "Unknown error occurred."
+            "auth": "API token is invalid",
+            "connection": "Unable to connect to Tibber API",
+            "unknown": "Unexpected error occurred",
+            "no_homes": "No homes found in your Tibber account"
         },
         "abort": {
-            "already_configured": "This entry is already configured."
+            "already_configured": "This Tibber account is already configured",
+            "cannot_connect": "Failed to connect to parent entry"
+        }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "title": "Tibber Prices Options",
+                "description": "Configure Tibber Prices integration options",
+                "data": {
+                    "fetch_mode": "Data Fetch Mode",
+                    "scan_interval": "Update interval (minutes)",
+                    "price_unit": "Price unit"
+                }
+            }
+        }
+    },
+    "entity": {
+        "sensor": {
+            "price_level": {
+                "state": {
+                    "very_cheap": "Very cheap",
+                    "cheap": "Cheap",
+                    "normal": "Normal",
+                    "expensive": "Expensive",
+                    "very_expensive": "Very expensive",
+                    "unknown": "Unknown"
+                }
+            },
+            "price_rating": {
+                "state": {
+                    "low": "Low",
+                    "normal": "Normal",
+                    "high": "High",
+                    "unknown": "Unknown"
+                }
+            }
+        }
+    },
+    "selector": {
+        "fetch_mode": {
+            "options": {
+                "auto": "Auto (time-based)",
+                "conservative": "Conservative (minimal API calls)",
+                "active": "Active (periodic checking)",
+                "aggressive": "Aggressive (frequent checking)"
+            }
         }
     }
 }

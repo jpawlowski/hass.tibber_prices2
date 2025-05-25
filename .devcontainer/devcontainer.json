@@ -31,12 +31,13 @@
             ],
             "settings": {
                 "editor.tabSize": 4,
-                "editor.formatOnPaste": true,
-                "editor.formatOnSave": true,
+                "editor.formatOnPaste": false,
+                "editor.formatOnSave": false,
                 "editor.formatOnType": false,
                 "extensions.ignoreRecommendations": false,
                 "files.eol": "\n",
-                "files.trimTrailingWhitespace": true,
+                "files.trimTrailingWhitespace": false,
+                "files.trimFinalNewlines": false,
                 "python.analysis.typeCheckingMode": "basic",
                 "python.analysis.autoImportCompletions": true,
                 "python.defaultInterpreterPath": "/usr/local/bin/python",
@@ -48,7 +49,9 @@
                 ],
                 "[python]": {
                     "editor.defaultFormatter": "charliermarsh.ruff",
-                    "editor.formatOnSave": true,
+                    "editor.formatOnPaste": false,
+                    "editor.formatOnSave": false,
+                    "editor.formatOnType": false,
                     "editor.codeActionsOnSave": {
                         "source.fixAll": "explicit",
                         "source.fixAll.ruff": "explicit"

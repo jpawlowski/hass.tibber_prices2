@@ -24,6 +24,13 @@ This repository contains a **custom component for Home Assistant**, intended to 
 -   Avoid third-party or custom libraries unless absolutely necessary
 -   Never assume static local file paths — use config options and relative paths
 
+## LLM Interaction Guidelines
+
+1. DO NOT create any new files via command line
+2. DO NOT use commands like "cat", "echo", or redirects to create files 
+3. ALWAYS work with existing files in the blueprint structure first. Create new files only if explicitly requested or required by the integration to follow Home Assistant or HACS standards.
+4. When you notice formatting inconsistencies, let me know before continuing
+
 ## Coding Style Policy
 
 -   Follow **PEP8**, enforced by **Black**, **isort**, and **Ruff**
@@ -32,6 +39,9 @@ This repository contains a **custom component for Home Assistant**, intended to 
 -   Use **f-strings** for string formatting
 -   Do not use `print()` — use `_LOGGER` for logging
 -   YAML examples must be **valid**, **minimal**, and **Home Assistant compliant**
+-   Use 4 spaces for indentation consistently
+-   Don't worry about blank lines between methods - follow the existing pattern
+-   For GraphQL queries, use triple quotes (""") and preserve them exactly as provided
 
 ## Code Structure and Ordering Policy
 
