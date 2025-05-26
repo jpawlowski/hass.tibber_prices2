@@ -9,7 +9,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from homeassistant.config_entries import ConfigEntry
+if TYPE_CHECKING:
+    from homeassistant.config_entries import ConfigEntry
+
 from homeassistant.const import CONF_ACCESS_TOKEN, Platform
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
@@ -19,7 +21,6 @@ from homeassistant.loader import async_get_loaded_integration
 from .api import TibberPricesApiClient
 from .const import (
     CONF_HOME_ID,
-    CONF_HOME_NAME,
     DOMAIN,
     LOGGER,
 )
