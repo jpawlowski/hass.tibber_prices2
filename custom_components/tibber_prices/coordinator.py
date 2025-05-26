@@ -334,7 +334,9 @@ class TibberPricesDataUpdateCoordinator(DataUpdateCoordinator):
                 (
                     "before 13:00"
                     if now.time() < TOMORROW_DATA_CHECK_START
-                    else "13:00-15:00" if now.time() < INTENSIVE_SEARCH_START else "after 15:00"
+                    else "13:00-15:00"
+                    if now.time() < INTENSIVE_SEARCH_START
+                    else "after 15:00"
                 ),
             )
 

@@ -1,5 +1,7 @@
 """Helper module for data validation in Tibber Prices integration."""
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from typing import Any
@@ -16,7 +18,7 @@ SIGNIFICANT_DAYS_OLD = 1
 
 @dataclass
 class ValidationContext:
-    """Context data for validation operations."""
+    """Context for price data validation."""
 
     current_date: date
     current_hour: int
@@ -46,7 +48,14 @@ def validate_price_data(
 
     """
     result = {"valid": True, "total_homes": len(price_info), "homes_with_issues": 0, "issues": []}
-    context = ValidationContext(current_date, current_hour, now, logger)
+
+    # Create validation context
+    context = ValidationContext(
+        current_date=current_date,
+        current_hour=current_hour,
+        now=now,
+        logger=logger,
+    )
 
     # Check each home's data for the current hour
     for home_id, home_price_info in price_info.items():
@@ -78,8 +87,6 @@ def validate_home_price_data(
 
     """
     result = {"valid": True, "issues": []}
-    current_date = context.current_date
-    logger = context.logger
 
     # Step 1: Check if today data exists
     if not price_info.get("today"):
@@ -90,28 +97,34 @@ def validate_home_price_data(
 
     try:
         # Step 2: Validate basic data structure
-        valid_structure = _validate_home_data_structure(home_id, price_info, logger)
+        valid_structure = _validate_home_data_structure(home_id, price_info, context.logger)
         if not valid_structure["valid"]:
             result["valid"] = False
             result["issues"].extend(valid_structure["issues"])
             return result
 
         # Step 3: Validate the date of the data
-        valid_date = _validate_home_data_date(home_id, price_info, current_date, logger)
+        valid_date = _validate_home_data_date(home_id, price_info, context.current_date, context.logger)
         if not valid_date["valid"]:
             result["valid"] = False
             result["issues"].extend(valid_date["issues"])
             return result
 
         # Step 4: Check for current hour data
-        current_hour_result = validate_current_hour_data(home_id, price_info["today"], context)
+        validation_context = {
+            "current_date": context.current_date,
+            "current_hour": context.current_hour,
+            "now": context.now,
+            "logger": context.logger,
+        }
+        current_hour_result = validate_current_hour_data(home_id, price_info["today"], validation_context)
 
         if not current_hour_result["valid"]:
             result["valid"] = False
             result["issues"].extend(current_hour_result["issues"])
 
     except (IndexError, KeyError, ValueError, TypeError) as err:
-        logger.warning("Error checking price data for home %s: %s", home_id, err)
+        context.logger.warning("Error checking price data for home %s: %s", home_id, err)
         result["valid"] = False
         result["issues"].append(f"Home {home_id} error: {err!s}")
 
@@ -213,7 +226,7 @@ def _validate_home_data_date(
 def validate_current_hour_data(
     home_id: str,
     today_prices: list[dict[str, Any]],
-    context: ValidationContext,
+    validation_context: dict[str, Any],
 ) -> dict[str, Any]:
     """
     Validate price data for the current hour and completeness of the day.
@@ -221,7 +234,7 @@ def validate_current_hour_data(
     Args:
         home_id: The home ID
         today_prices: List of price data for today
-        context: Validation context with date, time and logger
+        validation_context: Dictionary with validation context (current_date, current_hour, now, logger)
 
     Returns:
         Dictionary with validation results
@@ -230,10 +243,10 @@ def validate_current_hour_data(
     result = {"valid": True, "issues": []}
 
     # Extract validation context
-    current_date = context.current_date
-    current_hour = context.current_hour
-    now = context.now
-    logger = context.logger
+    current_date = validation_context["current_date"]
+    current_hour = validation_context["current_hour"]
+    now = validation_context["now"]
+    logger = validation_context["logger"]
 
     # Check for DST transition
     is_dst_day = is_dst_transition_day(now)
@@ -268,17 +281,8 @@ def validate_current_hour_data(
         return result
 
     # Check for day completeness
-    is_dst_day = is_dst_transition_day(now)
-
-    # We'll use the existing validate_day_completeness function which expects a dict
-    validation_dict = {
-        "current_date": current_date,
-        "current_hour": current_hour,
-        "is_dst_day": is_dst_day,
-        "now": now,
-        "logger": logger,
-    }
-    day_completeness = validate_day_completeness(home_id, today_prices, validation_dict)
+    validation_context["is_dst_day"] = is_dst_day
+    day_completeness = validate_day_completeness(home_id, today_prices, validation_context)
 
     if not day_completeness["valid"]:
         result["valid"] = False

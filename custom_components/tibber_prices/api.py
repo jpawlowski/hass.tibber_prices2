@@ -192,7 +192,8 @@ class TibberPricesApiClient:
             TibberPricesApiClientError: If the query fails after all retries
 
         """
-        query_type = self._determine_query_type(query)
+        # Extract a more meaningful identifier from the query for logging
+        query_type = self._identify_query_type(query)
         LOGGER.debug("Executing %s", query_type)
 
         data: dict[str, Any] = {"query": query}
@@ -201,27 +202,29 @@ class TibberPricesApiClient:
 
         return await self._execute_with_retry(data)
 
-    def _determine_query_type(self, query: str) -> str:
-        """Determine the type of GraphQL query for logging purposes."""
+    def _identify_query_type(self, query: str) -> str:
+        """Identify the type of GraphQL query from its content."""
         query_single_line = " ".join(query.split())
 
         if "priceInfo" in query_single_line:
             return "GraphQL price info query"
 
         if "priceRating" in query_single_line:
-            return self._determine_price_rating_query_type(query_single_line)
+            return self._identify_price_rating_query_type(query_single_line)
 
         if "userId" in query_single_line and "homes" in query_single_line:
             return "GraphQL user info query"
 
         return "GraphQL query"
 
-    def _determine_price_rating_query_type(self, query_single_line: str) -> str:
-        """Determine the specific type of price rating query."""
+    def _identify_price_rating_query_type(self, query_single_line: str) -> str:
+        """Identify specific price rating query types."""
         if "daily" in query_single_line and "hourly" not in query_single_line and "monthly" not in query_single_line:
             return "GraphQL daily price rating query"
+
         if "hourly" in query_single_line and "daily" not in query_single_line:
             return "GraphQL hourly price rating query"
+
         if "monthly" in query_single_line and "daily" not in query_single_line:
             return "GraphQL monthly price rating query"
 
@@ -234,23 +237,10 @@ class TibberPricesApiClient:
 
         while retry_count < MAX_RETRIES:
             try:
-                response_data = await self._api_wrapper(
-                    method="post",
-                    url=TIBBER_API_URL,
-                    data=data,
-                    headers=self._headers,
-                )
-
-                if "errors" in response_data:
-                    error_message = response_data["errors"][0].get("message", "Unknown GraphQL error")
-                    LOGGER.error("GraphQL query error: %s", error_message)
-                    msg = f"GraphQL query error: {error_message}"
-                    raise TibberPricesApiClientError(msg)
-
-                return response_data.get("data", {})
+                return await self._try_execute_query(data)
 
             except TibberPricesApiClientRateLimitError as exception:
-                # For rate limit errors, use exponential backoff
+                last_exception = exception
                 wait_time = RETRY_DELAY * (2**retry_count)
                 LOGGER.warning(
                     "Rate limit exceeded, retrying in %s seconds (attempt %s/%s)",
@@ -259,10 +249,9 @@ class TibberPricesApiClient:
                     MAX_RETRIES,
                 )
                 await asyncio.sleep(wait_time)
-                last_exception = exception
 
             except TibberPricesApiClientCommunicationError as exception:
-                # For network errors, retry with linear backoff
+                last_exception = exception
                 wait_time = RETRY_DELAY * (retry_count + 1)
                 LOGGER.warning(
                     "Communication error, retrying in %s seconds (attempt %s/%s): %s",
@@ -272,7 +261,6 @@ class TibberPricesApiClient:
                     exception,
                 )
                 await asyncio.sleep(wait_time)
-                last_exception = exception
 
             except TibberPricesApiClientAuthenticationError:
                 # Don't retry authentication errors
@@ -290,6 +278,23 @@ class TibberPricesApiClient:
         if last_exception:
             raise TibberPricesApiClientError(msg) from last_exception
         raise TibberPricesApiClientError(msg)
+
+    async def _try_execute_query(self, data: dict[str, Any]) -> dict[str, Any]:
+        """Try to execute the query once."""
+        response_data = await self._api_wrapper(
+            method="post",
+            url=TIBBER_API_URL,
+            data=data,
+            headers=self._headers,
+        )
+
+        if "errors" in response_data:
+            error_message = response_data["errors"][0].get("message", "Unknown GraphQL error")
+            LOGGER.error("GraphQL query error: %s", error_message)
+            msg = f"GraphQL query error: {error_message}"
+            raise TibberPricesApiClientError(msg)
+
+        return response_data.get("data", {})
 
     async def _api_wrapper(
         self,
