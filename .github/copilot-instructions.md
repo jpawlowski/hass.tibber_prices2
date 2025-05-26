@@ -33,7 +33,7 @@ This repository contains a **custom component for Home Assistant**, intended to 
 
 ## Coding Style Policy
 
--   Follow **PEP8**, enforced by **Black**, **isort**, and **Ruff**
+-   Follow **PEP8**, only enforced by **Ruff** (single tool for linting and formatting)
 -   Use **type hints** on all function and method signatures
 -   Add **docstrings** for all public classes and methods
 -   Use **f-strings** for string formatting
@@ -52,7 +52,7 @@ Use the following order inside Python modules:
     - Python standard library imports first
     - Third-party imports (e.g., `homeassistant.*`)
     - Local imports within this component (`from . import xyz`)
-    - Enforced automatically by `isort`
+    - Enforced automatically by **Ruff**
 
 2. **Module-level constants and globals**
 
@@ -163,10 +163,15 @@ Only create these files if explicitly required by your integration features. Not
 
 ## Linting and Code Quality Policy
 
--   Enforced by **Ruff**, which runs:
-
+-   Both formatting and linting enforced by **Ruff only**, which runs:
     -   Locally via VS Code devcontainer
     -   Remotely via GitHub Actions
+
+-   We use Ruff exclusively because:
+    -   It handles both formatting (replacing Black) and import sorting (replacing isort)
+    -   It's significantly faster than running multiple tools
+    -   It ensures consistency between local development and CI
+    -   It avoids conflicts between multiple formatting tools
 
 Key Ruff linter rules that must be followed:
 
@@ -178,10 +183,6 @@ Key Ruff linter rules that must be followed:
 -   `T201` – Do not use `print()`
 -   `SIM102` – Prefer `if x` over `if x == True`
 
-Also:
-
--   Use **Black** for formatting
--   Use **isort** for import sorting
 -   See `.ruff.toml` for custom settings
 -   Prefer **one return statement per function** unless early returns improve clarity
 

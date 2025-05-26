@@ -41,7 +41,7 @@
                 "python.analysis.typeCheckingMode": "basic",
                 "python.analysis.autoImportCompletions": true,
                 "python.defaultInterpreterPath": "/usr/local/bin/python",
-                "python.formatting.provider": "black",
+                "python.formatting.provider": "none",
                 "python.linting.enabled": true,
                 "python.linting.ruffEnabled": true,
                 "python.terminal.activateEnvInCurrentTerminal": true,
@@ -49,15 +49,14 @@
                     "--no-cov"
                 ],
 
-                // Python → Black + Ruff
+                // Python → Ruff for both formatting and linting
                 "[python]": {
-                  "editor.defaultFormatter": "ms-python.python",
+                  "editor.defaultFormatter": "charliermarsh.ruff",
                   "editor.formatOnSave": true,
                   "editor.formatOnPaste": false,
                   "editor.formatOnType": false,
                   "editor.codeActionsOnSave": {
-                    "source.fixAll.ruff": "always",
-                    "source.organizeImports": "always"
+                    "source.fixAll.ruff": "always"
                   }
                 },
 
