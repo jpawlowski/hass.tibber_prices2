@@ -16,3 +16,24 @@ coverage.xml
 # Home Assistant configuration
 config/*
 !config/configuration.yaml
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE/editor caches
+.idea/
+.DS_Store
+
+# Type-check & test caches
+.mypy_cache/
+.pytest_cache/
+
+# Environment files & secrets
+.env
+
+# Home Assistant runtime files
+home-assistant_v2.db
+*.db-shm
+*.db-wal

@@ -192,33 +192,43 @@ class TibberPricesApiClient:
             TibberPricesApiClientError: If the query fails after all retries
 
         """
-        # Extract a more meaningful identifier from the query for logging
-        query_type = "GraphQL query"
-        query_single_line = " ".join(query.split())
-
-        # Check for specific patterns to identify query types
-        if "priceInfo" in query_single_line:
-            query_type = "GraphQL price info query"
-        elif "priceRating" in query_single_line:
-            if ("daily" in query_single_line
-                and "hourly" not in query_single_line
-                and "monthly" not in query_single_line):
-                query_type = "GraphQL daily price rating query"
-            elif "hourly" in query_single_line and "daily" not in query_single_line:
-                query_type = "GraphQL hourly price rating query"
-            elif "monthly" in query_single_line and "daily" not in query_single_line:
-                query_type = "GraphQL monthly price rating query"
-            else:
-                query_type = "GraphQL price rating query"
-        elif "userId" in query_single_line and "homes" in query_single_line:
-            query_type = "GraphQL user info query"
-
+        query_type = self._determine_query_type(query)
         LOGGER.debug("Executing %s", query_type)
 
         data: dict[str, Any] = {"query": query}
         if variables:
             data["variables"] = variables
 
+        return await self._execute_with_retry(data)
+
+    def _determine_query_type(self, query: str) -> str:
+        """Determine the type of GraphQL query for logging purposes."""
+        query_single_line = " ".join(query.split())
+
+        if "priceInfo" in query_single_line:
+            return "GraphQL price info query"
+
+        if "priceRating" in query_single_line:
+            return self._determine_price_rating_query_type(query_single_line)
+
+        if "userId" in query_single_line and "homes" in query_single_line:
+            return "GraphQL user info query"
+
+        return "GraphQL query"
+
+    def _determine_price_rating_query_type(self, query_single_line: str) -> str:
+        """Determine the specific type of price rating query."""
+        if "daily" in query_single_line and "hourly" not in query_single_line and "monthly" not in query_single_line:
+            return "GraphQL daily price rating query"
+        if "hourly" in query_single_line and "daily" not in query_single_line:
+            return "GraphQL hourly price rating query"
+        if "monthly" in query_single_line and "daily" not in query_single_line:
+            return "GraphQL monthly price rating query"
+
+        return "GraphQL price rating query"
+
+    async def _execute_with_retry(self, data: dict[str, Any]) -> dict[str, Any]:
+        """Execute the GraphQL query with retry logic."""
         retry_count = 0
         last_exception = None
 

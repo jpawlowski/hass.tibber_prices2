@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-from typing import Any, cast
+from typing import Any
 
 import voluptuous as vol
-
 from homeassistant.config_entries import ConfigEntry, ConfigFlow, ConfigFlowResult, OptionsFlow
 from homeassistant.const import CONF_ACCESS_TOKEN
 from homeassistant.core import HomeAssistant, callback
@@ -22,10 +21,8 @@ from .const import (
     CONF_FETCH_MODE,
     CONF_HOME_ID,
     CONF_HOME_NAME,
-    CONF_PARENT_ENTRY_ID,
     CONF_PRICE_UNIT,
     CONF_SCAN_INTERVAL,
-    CONF_SUB_ENTRY,
     DEFAULT_FETCH_MODE,
     DEFAULT_PRICE_UNIT,
     DEFAULT_SCAN_INTERVAL,

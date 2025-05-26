@@ -41,22 +41,36 @@
                 "python.analysis.typeCheckingMode": "basic",
                 "python.analysis.autoImportCompletions": true,
                 "python.defaultInterpreterPath": "/usr/local/bin/python",
+                "python.formatting.provider": "black",
                 "python.linting.enabled": true,
                 "python.linting.ruffEnabled": true,
                 "python.terminal.activateEnvInCurrentTerminal": true,
                 "python.testing.pytestArgs": [
                     "--no-cov"
                 ],
+
+                // Python → Black + Ruff
                 "[python]": {
-                    "editor.defaultFormatter": "charliermarsh.ruff",
-                    "editor.formatOnPaste": false,
-                    "editor.formatOnSave": false,
-                    "editor.formatOnType": false,
-                    "editor.codeActionsOnSave": {
-                        "source.fixAll": "explicit",
-                        "source.fixAll.ruff": "explicit"
-                    }
+                  "editor.defaultFormatter": "ms-python.python",
+                  "editor.formatOnSave": true,
+                  "editor.formatOnPaste": false,
+                  "editor.formatOnType": false,
+                  "editor.codeActionsOnSave": {
+                    "source.fixAll.ruff": "always",
+                    "source.organizeImports": "always"
+                  }
                 },
+
+                // JSON/YAML → Prettier, if you like
+                "[json]": {
+                  "editor.defaultFormatter": "esbenp.prettier-vscode",
+                  "editor.formatOnSave": true
+                },
+                "[yaml]": {
+                  "editor.defaultFormatter": "redhat.vscode-yaml",
+                  "editor.formatOnSave": true
+                },
+
                 "yaml.customTags": [
                     "!input scalar",
                     "!secret scalar",

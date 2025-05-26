@@ -11,6 +11,10 @@ __pycache__/
 env/
 venv/
 
-# Ignore compiled YAML or generated docs
-*.yaml
-*.yml
+# Docs/build outputs
+docs/_build/
+build/
+dist/
+
+# Only skip truly generated YAML
+**/__generated__/*.yaml

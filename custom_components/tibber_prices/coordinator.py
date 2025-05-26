@@ -21,6 +21,12 @@ from .api import (
     TibberPricesApiClientRateLimitError,
 )
 from .const import DOMAIN, LOGGER
+from .helpers import (
+    check_for_missed_midnight_transition,
+    check_for_missing_current_hour,
+    perform_midnight_rotation,
+    validate_cache_structure,
+)
 
 if TYPE_CHECKING:
     from homeassistant.config_entries import ConfigEntry
@@ -177,6 +183,9 @@ class TibberPricesDataUpdateCoordinator(DataUpdateCoordinator):
                     price_info_count,
                     "available" if self._tomorrow_data_available else "not available",
                 )
+
+                # Check if we need to perform a missed midnight data rotation
+                await self._check_and_handle_missed_midnight_transition()
         else:
             self.logger.info("First run: No cached data found - will perform full initialization")
 
@@ -322,11 +331,11 @@ class TibberPricesDataUpdateCoordinator(DataUpdateCoordinator):
             self.logger.info(
                 "API state: %s, Time window: %s",
                 state.value,
-                "before 13:00"
-                if now.time() < TOMORROW_DATA_CHECK_START
-                else "13:00-15:00"
-                if now.time() < INTENSIVE_SEARCH_START
-                else "after 15:00",
+                (
+                    "before 13:00"
+                    if now.time() < TOMORROW_DATA_CHECK_START
+                    else "13:00-15:00" if now.time() < INTENSIVE_SEARCH_START else "after 15:00"
+                ),
             )
 
             # Fetch basic data if needed
@@ -617,27 +626,8 @@ class TibberPricesDataUpdateCoordinator(DataUpdateCoordinator):
         # This is called from __init__.py at midnight
         self.logger.info("====== MIDNIGHT TRANSITION DETECTED ======")
 
-        if not self._data_cache:
-            self.logger.warning("No data cache available during midnight transition")
-            return
-
-        price_info_count = len(self._data_cache.get("price_info", {}))
-        homes_with_tomorrow = sum(1 for info in self._data_cache.get("price_info", {}).values() if info.get("tomorrow"))
-
-        self.logger.info(
-            "Rotating data: Moving tomorrow's prices to today (%d/%d homes have tomorrow data)",
-            homes_with_tomorrow,
-            price_info_count,
-        )
-
-        # Move tomorrow's data to today
-        for price_info in self._data_cache.get("price_info", {}).values():
-            if "tomorrow" in price_info:
-                price_info["today"] = price_info["tomorrow"]
-                price_info["tomorrow"] = []
-
-        # Reset tomorrow data availability flag
-        self._tomorrow_data_available = False
+        # Perform the midnight rotation using shared implementation
+        self._perform_midnight_rotation()
 
         # Save the updated data to persistent storage
         save_task = asyncio.create_task(self._save_cached_data())
@@ -647,6 +637,90 @@ class TibberPricesDataUpdateCoordinator(DataUpdateCoordinator):
         self.logger.info("Scheduling refresh to fetch new tomorrow's data")
         refresh_task = asyncio.create_task(self.async_refresh())
         refresh_task.add_done_callback(lambda _: None)
+
+    async def _check_and_handle_missed_midnight_transition(self) -> None:
+        """
+        Check if a midnight transition was missed and handle it if needed.
+
+        This is called during initialization to ensure data is properly rotated
+        when Home Assistant wasn't running at midnight.
+        """
+        now = dt_util.now()
+        current_date = now.date()
+
+        # If we don't have price info data yet, nothing to rotate
+        if not self._data_cache.get("price_info"):
+            return
+
+        # Use the helper to check for missed midnight transitions
+        midnight_check = check_for_missed_midnight_transition(self._data_cache["price_info"], current_date, self.logger)
+
+        # Handle midnight rotation if needed
+        if midnight_check["needs_rotation"]:
+            self.logger.warning(
+                "====== MISSED MIDNIGHT TRANSITION DETECTED ======\n%d/%d homes have outdated 'today' data from %s",
+                midnight_check["outdated_homes"],
+                midnight_check["total_homes"],
+                (
+                    f"multiple days ago (avg: {midnight_check['avg_days_old']:.1f} days)"
+                    if midnight_check["severely_outdated"]
+                    else "previous day"
+                ),
+            )
+
+            # Perform the midnight rotation using the helper
+            perform_midnight_rotation(self._data_cache, self.logger)
+
+            # Reset tomorrow data availability flag
+            self._tomorrow_data_available = False
+
+            # Save rotated data to storage
+            await self._save_cached_data()
+            self.logger.info("Completed missed midnight data rotation during initialization")
+
+            # Force an immediate refresh if data is severely outdated
+            if midnight_check["severely_outdated"]:
+                self.logger.warning(
+                    "Data is severely outdated (avg: %.1f days old). Forcing immediate refresh to get current data.",
+                    midnight_check["avg_days_old"],
+                )
+                # Schedule immediate refresh task
+                refresh_task = asyncio.create_task(self.async_refresh())
+                refresh_task.add_done_callback(lambda _: None)
+        else:
+            # Run validations on the cache
+            await self._validate_cache_data()
+
+    async def _validate_cache_data(self) -> None:
+        """Validate cache data for structural issues and missing current hour."""
+        # Structure validation first
+        structure_result = validate_cache_structure(self._data_cache)
+        if not structure_result["valid"]:
+            self.logger.warning(
+                "Cache structure validation detected issues: %s", ", ".join(structure_result["structural_issues"])
+            )
+            if structure_result["needs_full_refresh"]:
+                self.logger.info("Scheduling immediate refresh to fix structural issues")
+                refresh_task = asyncio.create_task(self.async_refresh())
+                refresh_task.add_done_callback(lambda _: None)
+                return
+
+        # Then check for missing current hour data
+        await check_for_missing_current_hour(self.logger, self._data_cache, self.async_refresh, self._last_full_update)
+        self.logger.debug("Completed cache data validation")
+
+    def _perform_midnight_rotation(self) -> None:
+        """
+        Perform the midnight data rotation (move tomorrow to today).
+
+        This is a synchronous version of the data rotation logic that can be
+        called from both async_handle_midnight_transition and the initialization check.
+        """
+        # Use the helper to perform the rotation
+        perform_midnight_rotation(self._data_cache, self.logger)
+
+        # Reset tomorrow data availability flag
+        self._tomorrow_data_available = False
 
     def _get_api_client(self) -> TibberPricesApiClient | None:
         """Get the API client from hass.data."""

@@ -2,25 +2,12 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
-from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
-
-from .const import DOMAIN
-
-if TYPE_CHECKING:
-    from .coordinator import TibberPricesDataUpdateCoordinator
+from typing import Any
 
 
 async def async_setup_entry(
-    hass: HomeAssistant,
-    entry: ConfigEntry,
-    async_add_entities: AddEntitiesCallback,
+    _hass: Any,
+    _entry: Any,
+    _async_add_entities: Any,
 ) -> None:
     """Set up the sensor platform."""
-    # No entities to add at this time
-    # Access coordinator correctly for future use
-    runtime_data = hass.data[DOMAIN][entry.entry_id]
-    coordinator = runtime_data.coordinator
